@@ -13,25 +13,24 @@
 
 #include "requestLib.h"
 
-void loadRequests(char *fName, L1List<VM_Request> &rList) {
+void loadRequests (char *fName, L1List<VM_Request> &rList) {
     // TODO: write your code to load requests. Each request is separated by a
     // whitespace
-    fstream f;
-    f.open(fName, ios::in);
-    if (!f) {
-        cout << "The file is not found!";
-        return;
-    }
-    string line;
-    while (getline(f, line)) {
-        if (line == "") continue;
-        stringstream ss(line);
-        string s;
-        while (ss >> s) {
-            if (s[s.length() - 1] == ';') s.pop_back();
-            VM_Request rq(s);
-            rList.insertTail(rq);
+    ifstream f (fName);
+    if (f) {
+        string line;
+        while (getline (f, line)) {
+            if (line == "") continue;
+            stringstream ss (line);
+            string       s;
+            while (ss >> s) {
+                if (s[s.length () - 1] == ';') s.pop_back ();
+                VM_Request rq (s);
+                rList.insertTail (rq);
+            }
         }
+        f.close ();
     }
-    f.close();
+    else
+        cout << "The file is not found!\n";
 }

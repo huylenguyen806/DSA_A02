@@ -26,14 +26,24 @@ bool initVMGlobalData(void **pGData) {
 void releaseVMGlobalData(void *pGData) {
     // TODO: do your cleanup, left this empty if you don't have any dynamically
     // allocated data
-    Vehicle* temp = (Vehicle*)pGData;
+    Vehicle *temp = (Vehicle *)pGData;
     delete temp;
     pGData = NULL;
     temp = NULL;
 }
 
+void initVehicle(void *&pGD, L1List<VM_Record> &recordList) {
+    recordList.traverse([](void *&pGData, VM_Record &a) { ((Vehicle *)pGData)->insert(a); }, pGD);
+}
+
 bool processRequest(VM_Request &request, L1List<VM_Record> &recordList, void *pGData) {
     // TODO: Your code goes here
     // return false for invlaid events
+    Vehicle *pGD = (Vehicle*)pGData;
+    if(pGD->init == false)
+    {
+        pGD->init = true;
+        initVehicle(pGData, recordList);
+    }
     return true;
 }

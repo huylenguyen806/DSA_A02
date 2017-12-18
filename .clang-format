@@ -8,3 +8,10 @@ AllowShortCaseLabelsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
 BinPackParameters: true
 ColumnLimit: 100
+AlignTrailingComments: true
+BreakBeforeBraces: Custom
+BraceWrapping: 
+    BeforeElse: true
+SpaceBeforeParens: Always
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true

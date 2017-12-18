@@ -25,87 +25,87 @@
 
 using namespace std;
 
-void strPrintTime(char *des, time_t &t) {
-    tm *pTime = gmtime(&t);
-    strftime(des, 26, "%Y-%m-%d %H:%M:%S", pTime);
+void strPrintTime (char *des, time_t &t) {
+    tm *pTime = gmtime (&t);
+    strftime (des, 26, "%Y-%m-%d %H:%M:%S", pTime);
 }
 
-void loadVMDB(char *fName, L1List<VM_Record> &db) {
-    ifstream inFile(fName);
+void loadVMDB (char *fName, L1List<VM_Record> &db) {
+    ifstream inFile (fName);
 
     if (inFile) {
         string line;
-        getline(inFile, line);  // skip the first line
+        getline (inFile, line);  // skip the first line
         VM_Record record;
 
-        db.insertHead(record);  /// add dummy object
+        db.insertHead (record);  /// add dummy object
 
-        while (getline(inFile, line)) {
+        while (getline (inFile, line)) {
             /// On Windows, lines on file ends with \r\n. So you have to remove
             /// \r
-            if (line[line.length() - 1] == '\r') line.erase(line.length() - 1);
-            if (line.length() > 0) {
-                if (parseVMRecord((char *)line.data(), db[0]))  /// parse and store data directly
-                    db.insertHead(record);                      /// add dummy object for next turn
+            if (line[line.length () - 1] == '\r') line.erase (line.length () - 1);
+            if (line.length () > 0) {
+                if (parseVMRecord ((char *)line.data (), db[0]))  /// parse and store data directly
+                    db.insertHead (record);                       /// add dummy object for next turn
             }
         }
-        db.removeHead();  /// remove the first dummy
+        db.removeHead ();  /// remove the first dummy
 
-        db.reverse();
-        inFile.close();
-    } else {
-        cout << "The file is not found!";
+        db.reverse ();
+        inFile.close ();
+    }
+    else {
+        cout << "The file is not found!\n";
     }
 }
 
-bool parseVMRecord(char *pBuf, VM_Record &bInfo) {
+bool parseVMRecord (char *pBuf, VM_Record &bInfo) {
     // TODO: write code to parse a record from given line
-    string line(pBuf);
+    string line (pBuf);
     if (line == "") return false;
-    stringstream ss(line);
-    string _Col_time, _id, _longitude, _latitude, _temp;
-    getline(ss, _temp, ',');
-    getline(ss, _Col_time, ',');
-    getline(ss, _id, ',');
-    getline(ss, _longitude, ',');
-    getline(ss, _latitude, ',');
-    getline(ss, _temp, '\n');
+    stringstream ss (line);
+    string       _Col_time, _id, _longitude, _latitude, _temp;
+    getline (ss, _temp, ',');
+    getline (ss, _Col_time, ',');
+    getline (ss, _id, ',');
+    getline (ss, _longitude, ',');
+    getline (ss, _latitude, ',');
+    getline (ss, _temp, '\n');
     // Get id
-    strcpy(bInfo.id, _id.c_str());
+    if (_id.length () < 4) _id = string (4 - _id.length (), '0') + _id;
+    strcpy (bInfo.id, _id.c_str ());
     // Get time
     tm tm;
-    strptime(_Col_time.c_str(), "%m/%d/%yyyy %H:%M:%S", &tm);
-    bInfo.timestamp = timegm(&tm);
+    strptime (_Col_time.c_str (), "%m/%d/%yyyy %H:%M:%S", &tm);
+    bInfo.timestamp = timegm (&tm);
     // Get longitude
-    stringstream(_longitude) >> bInfo.longitude;
+    stringstream (_longitude) >> bInfo.longitude;
     // Get latitude
-    stringstream(_latitude) >> bInfo.latitude;
+    stringstream (_latitude) >> bInfo.latitude;
     return true;
 }
 
-void process(L1List<VM_Request> &requestList, L1List<VM_Record> &rList) {
+void process (L1List<VM_Request> &requestList, L1List<VM_Record> &rList) {
     void *pGData = NULL;
-    initVMGlobalData(&pGData);
+    initVMGlobalData (&pGData);
 
-    while (!requestList.isEmpty()) {
-        if (!processRequest(requestList[0], rList, pGData))
+    while (!requestList.isEmpty ()) {
+        if (!processRequest (requestList[0], rList, pGData))
             cout << requestList[0].code << " is an invalid event\n";
-        requestList.removeHead();
+        requestList.removeHead ();
     }
 
-    releaseVMGlobalData(pGData);
+    releaseVMGlobalData (pGData);
 }
 
-void printVMRecord(VM_Record &b) {
-    printf("%s: (%0.5f, %0.5f), %s\n", b.id, b.longitude, b.latitude, ctime(&b.timestamp));
+void printVMRecord (VM_Record &b) {
+    printf ("%s: (%0.5f, %0.5f), %s\n", b.id, b.longitude, b.latitude, ctime (&b.timestamp));
 }
 
 /// This function converts decimal degrees to radians
-inline double deg2rad(double deg) { return (deg * __PI / 180); }
-
+inline double deg2rad (double deg) { return (deg * __PI / 180); }
 ///  This function converts radians to decimal degrees
-inline double rad2deg(double rad) { return (rad * 180 / __PI); }
-
+inline double rad2deg (double rad) { return (rad * 180 / __PI); }
 /**
  * Returns the distance between two points on the Earth.
  * Direct translation from http://en.wikipedia.org/wiki/Haversine_formula
@@ -115,13 +115,13 @@ inline double rad2deg(double rad) { return (rad * 180 / __PI); }
  * @param lon2d Longitude of the second point in degrees
  * @return The distance between the two points in kilometers
  */
-double distanceEarth(double lat1d, double lon1d, double lat2d, double lon2d) {
+double distanceEarth (double lat1d, double lon1d, double lat2d, double lon2d) {
     double lat1r, lon1r, lat2r, lon2r, u, v;
-    lat1r = deg2rad(lat1d);
-    lon1r = deg2rad(lon1d);
-    lat2r = deg2rad(lat2d);
-    lon2r = deg2rad(lon2d);
-    u = sin((lat2r - lat1r) / 2);
-    v = sin((lon2r - lon1r) / 2);
-    return 2.0 * earthRadiusKm * asin(sqrt(u * u + cos(lat1r) * cos(lat2r) * v * v));
+    lat1r = deg2rad (lat1d);
+    lon1r = deg2rad (lon1d);
+    lat2r = deg2rad (lat2d);
+    lon2r = deg2rad (lon2d);
+    u     = sin ((lat2r - lat1r) / 2);
+    v     = sin ((lon2r - lon1r) / 2);
+    return 2.0 * earthRadiusKm * asin (sqrt (u * u + cos (lat1r) * cos (lat2r) * v * v));
 }

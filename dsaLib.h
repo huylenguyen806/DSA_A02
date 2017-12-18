@@ -12,6 +12,7 @@
 #define A02_DSALIB_H
 
 #include <math.h>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -19,120 +20,124 @@
 using namespace std;
 
 class DSAException {
-    int _error;
+    int    _error;
     string _text;
 
    public:
-    DSAException() : _error(0), _text("Success") {}
-    DSAException(int err) : _error(err), _text("Unknown Error") {}
-    DSAException(int err, const char *text) : _error(err), _text(text) {}
-
-    int getError() { return _error; }
-    string &getErrorText() { return _text; }
+    DSAException () : _error (0), _text ("Success") {}
+    DSAException (int err) : _error (err), _text ("Unknown Error") {}
+    DSAException (int err, const char *text) : _error (err), _text (text) {}
+    int     getError () { return _error; }
+    string &getErrorText () { return _text; }
 };
 
 template <class T>
 struct L1Item {
-    T data;
+    T          data;
     L1Item<T> *pNext;
-    L1Item() : pNext(NULL) {}
-    L1Item(T &a) : data(a), pNext(NULL) {}
+    L1Item () : pNext (NULL) {}
+    L1Item (T &a) : data (a), pNext (NULL) {}
 };
 
 template <class T>
 class L1List {
     L1Item<T> *_pHead;  // The head pointer of linked list
     L1Item<T> *_pLast;  // The last pointer of linked list
-    size_t _size;       // number of elements in this list
+    size_t     _size;   // number of elements in this list
    public:
-    L1List() : _pHead(NULL), _pLast(NULL), _size(0) {}
-    L1List(T &a) : _pHead(a), _pLast(a), _size(1) {}
-    ~L1List() {
-        destroy();
+    L1List () : _pHead (NULL), _pLast (NULL), _size (0) {}
+    L1List (T &a) : _pHead (a), _pLast (a), _size (1) {}
+    ~L1List () {
+        destroy ();
         _size = 0;
     }
 
-    void destroy();
+    void destroy ();
 
-    bool isEmpty() { return _pHead == NULL; }
-    size_t getSize() { return _size; }
+    bool   isEmpty () { return _pHead == NULL; }
+    size_t getSize () { return _size; }
+    T &at (int i);
+    T &operator[] (int i);
 
-    T &at(int i);
-    T &operator[](int i);
+    bool find (T &a, int &idx);
+    int insert (int i, T &a);
+    int insertTail (T &a);
+    int remove (int i);
 
-    bool find(T &a, int &idx);
-    int insert(int i, T &a);
-    int insertTail(T &a);
-    int remove(int i);
+    int push_back (T &a);
+    int insertHead (T &a);
 
-    int push_back(T &a);
-    int insertHead(T &a);
+    int removeHead ();
+    int removeLast ();
 
-    int removeHead();
-    int removeLast();
+    void reverse ();
 
-    void reverse();
+    T &getLast ();
 
-    T &getLast();
-
-    L1Item<T> *&pointerHead() { return _pHead; }
-
-    L1Item<T> *&pointerLast() { return _pLast; }
-
-    bool traverse(bool (*op)(T, T, T, T), T n4) {
+    L1Item<T> *&pointerHead () { return _pHead; }
+    L1Item<T> *&pointerLast () { return _pLast; }
+    bool traverse (bool (*op) (T, T, T, T), T n4) {
         L1Item<T> *p = _pHead;
         while (p->pNext != NULL) {
-            if (op(p->data, p->pNext->data, _pLast->data, n4)) return true;
+            if (op (p->data, p->pNext->data, _pLast->data, n4)) return true;
             p = p->pNext;
         }
         return false;
     }
 
-    bool traverse(bool (*op)(T &, T &), T &id) {
+    bool traverse (std::function<void(void *&, T &)> op, void *&pGData) {
+        L1Item<T> *p = _pHead;
+        while (p) {
+            op (pGData, p->data);
+            p = p->pNext;
+        }
+    }
+
+    bool traverse (bool (*op) (T &, T &), T &id) {
         L1Item<T> *p = _pHead;
         while (p != NULL) {
-            if (op(p->data, id)) return true;
+            if (op (p->data, id)) return true;
             p = p->pNext;
         }
         return false;
     }
 
-    void traverseGreater(bool (*op)(T &, T &), T &n) {
+    void traverseGreater (bool (*op) (T &, T &), T &n) {
         L1Item<T> *p = _pHead;
         while (p != NULL) {
-            if (op(p->data, n)) { n = p->data; }
+            if (op (p->data, n)) { n = p->data; }
             p = p->pNext;
         }
     }
 
-    void traverse(void (*op)(T &)) {
+    void traverse (void (*op) (T &)) {
         L1Item<T> *p = _pHead;
         while (p) {
-            op(p->data);
+            op (p->data);
             p = p->pNext;
         }
     }
-    void traverse(void (*op)(T &, T &), T &a) {
+    void traverse (void (*op) (T &, T &), T &a) {
         L1Item<T> *p = _pHead;
         while (p) {
-            op(p->data, a);
+            op (p->data, a);
             p = p->pNext;
         }
     }
-    void traverse(void (*op)(T &, void *), void *pParam) {
+    void traverse (void (*op) (T &, void *), void *pParam) {
         L1Item<T> *p = _pHead;
         while (p) {
-            op(p->data, pParam);
+            op (p->data, pParam);
             p = p->pNext;
         }
     }
-    void removeAll(T &a) {
+    void removeAll (T &a) {
         L1Item<T> *pre = _pHead;
         L1Item<T> *cur = _pHead->pNext;
         while (cur) {
             if (cur->data == a) {
                 L1Item<T> *del = cur;
-                pre->pNext = cur->pNext;
+                pre->pNext     = cur->pNext;
                 delete del;
                 cur = pre->pNext;
                 _size--;
@@ -142,20 +147,19 @@ class L1List {
             cur = cur->pNext;
         }
         _pLast = pre;
-        if (_pHead->data == a) { removeHead(); }
+        if (_pHead->data == a) { removeHead (); }
     }
 };
 
 /// Insert item to the end of the list
 /// Return 0 if success
 template <class T>
-int L1List<T>::push_back(T &a) {
-    if (_pHead == NULL) {
-        _pHead = new L1Item<T>(a);
-    } else {
-        L1Item<T> *p = _pHead;
+int L1List<T>::push_back (T &a) {
+    if (_pHead == NULL) { _pHead = new L1Item<T> (a); }
+    else {
+        L1Item<T> *p       = _pHead;
         while (p->pNext) p = p->pNext;
-        p->pNext = new L1Item<T>(a);
+        p->pNext           = new L1Item<T> (a);
     }
 
     _size++;
@@ -165,10 +169,10 @@ int L1List<T>::push_back(T &a) {
 /// Insert item to the front of the list
 /// Return 0 if success
 template <class T>
-int L1List<T>::insertHead(T &a) {
-    L1Item<T> *p = new L1Item<T>(a);
-    p->pNext = _pHead;
-    _pHead = p;
+int L1List<T>::insertHead (T &a) {
+    L1Item<T> *p = new L1Item<T> (a);
+    p->pNext     = _pHead;
+    _pHead       = p;
     _size++;
     return 0;
 }
@@ -176,10 +180,10 @@ int L1List<T>::insertHead(T &a) {
 /// Remove the first item of the list
 /// Return 0 if success
 template <class T>
-int L1List<T>::removeHead() {
+int L1List<T>::removeHead () {
     if (_pHead) {
         L1Item<T> *p = _pHead;
-        _pHead = p->pNext;
+        _pHead       = p->pNext;
         delete p;
         _size--;
         if (_size == 0) _pLast = _pHead;
@@ -191,7 +195,7 @@ int L1List<T>::removeHead() {
 /// Remove the last item of the list
 /// Return 0 if success
 template <class T>
-int L1List<T>::removeLast() {
+int L1List<T>::removeLast () {
     if (_pHead) {
         if (_pHead->pNext) {
             L1Item<T> *prev = _pHead;
@@ -202,8 +206,9 @@ int L1List<T>::removeLast() {
             }
             delete pcur;
             prev->pNext = NULL;
-            _pLast = prev;
-        } else {
+            _pLast      = prev;
+        }
+        else {
             delete _pHead;
             _pHead = NULL;
         }
@@ -217,13 +222,18 @@ int L1List<T>::removeLast() {
 
 /// Reverse the list
 template <class T>
-void L1List<T>::reverse() {
-    L1Item<T> *temp = new L1Item<T>();
+void L1List<T>::reverse () {
+    L1Item<T> *temp  = new L1Item<T> ();
+    bool       first = false;
     while (_pHead != NULL) {
-        temp->data = _pHead->data;
-        L1Item<T> *t = new L1Item<T>();
-        t->pNext = temp;
-        temp = t;
+        temp->data   = _pHead->data;
+        L1Item<T> *t = new L1Item<T> ();
+        t->pNext     = temp;
+        if (!first) {
+            _pLast = temp;
+            first  = true;
+        }
+        temp   = t;
         _pHead = _pHead->pNext;
     }
     _pHead = temp->pNext;
@@ -233,25 +243,28 @@ void L1List<T>::reverse() {
 /// Remove the ith item of the list
 /// Return 0 if success, else return -1
 template <class T>
-int L1List<T>::remove(int i) {
+int L1List<T>::remove (int i) {
     if (i == 0) {
-        removeHead();
+        removeHead ();
         return 0;
-    } else if (i == _size - 1) {
-        removeLast();
+    }
+    else if (i == _size - 1) {
+        removeLast ();
         return 0;
-    } else if (i > 0 & i < _size - 1) {
-        L1Item<T> *pre = _pHead;
+    }
+    else if (i > 0 && i < _size - 1) {
+        L1Item<T> *pre  = _pHead;
         L1Item<T> *curr = _pHead;
         while (i != 0) {
-            pre = curr;
+            pre  = curr;
             curr = curr->pNext;
             i--;
         }
         pre->pNext = curr->pNext;
         delete curr;
         return 0;
-    } else {
+    }
+    else {
         return -1;
     }
 }
@@ -259,27 +272,29 @@ int L1List<T>::remove(int i) {
 /// Insert an item into the list
 /// Return 0 if success
 template <class T>
-int L1List<T>::insert(int i, T &a) {
+int L1List<T>::insert (int i, T &a) {
     if (i == 0) {
-        insertHead(a);
+        insertHead (a);
         return 0;
     }
     if (i > 0 && i < _size) {  // from 1 to size - 1
-        L1Item<T> *pre = _pHead;
+        L1Item<T> *pre  = _pHead;
         L1Item<T> *curr = _pHead;
         while (i != 0) {
-            pre = curr;
+            pre  = curr;
             curr = curr->pNext;
             i--;
         }
-        pre->pNext = new L1Item<T>(a);
+        pre->pNext        = new L1Item<T> (a);
         pre->pNext->pNext = curr;
         _size++;
         return 0;
-    } else if (i == _size) {
-        insertTail(a);
+    }
+    else if (i == _size) {
+        insertTail (a);
         return 0;
-    } else {
+    }
+    else {
         return -1;
     }
 }
@@ -287,14 +302,14 @@ int L1List<T>::insert(int i, T &a) {
 /// Insert an item into the tail of linked list
 /// Return 0 if success
 template <class T>
-int L1List<T>::insertTail(T &a) {
+int L1List<T>::insertTail (T &a) {
     if (_pLast == NULL) {
-        insertHead(a);
+        insertHead (a);
         _pLast = _pHead;
         return 0;
     }
-    _pLast->pNext = new L1Item<T>(a);
-    _pLast = _pLast->pNext;
+    _pLast->pNext = new L1Item<T> (a);
+    _pLast        = _pLast->pNext;
     _size++;
     return 0;
 }
@@ -302,9 +317,9 @@ int L1List<T>::insertTail(T &a) {
 /// Find the item a
 /// Get the index if found
 template <class T>
-bool L1List<T>::find(T &a, int &idx) {
+bool L1List<T>::find (T &a, int &idx) {
     L1Item<T> *temp = _pHead;
-    idx = 0;
+    idx             = 0;
     while (temp != NULL) {
         if (a == temp->data) { return true; }
         temp = temp->pNext;
@@ -315,7 +330,7 @@ bool L1List<T>::find(T &a, int &idx) {
 
 /// Operator[]
 template <class T>
-T &L1List<T>::operator[](int i) {
+T &L1List<T>::operator[] (int i) {
     if (i <= _size - 1 && i >= 0) {
         L1Item<T> *temp = _pHead;
         while (i != 0) {
@@ -330,20 +345,19 @@ T &L1List<T>::operator[](int i) {
 /// At
 /// if out-of-range then throw the exception
 template <class T>
-T &L1List<T>::at(int i) {
-    if (i <= _size - 1 && i >= 0) {
-        operator[](i);
-    } else
-        throw out_of_range("Out-of-range");
+T &L1List<T>::at (int i) {
+    if (i <= _size - 1 && i >= 0) { operator[] (i); }
+    else
+        throw out_of_range ("Out-of-range");
 }
 
 /// Destroy the list
 template <class T>
-void L1List<T>::destroy() {
+void L1List<T>::destroy () {
     if (_pHead == NULL) return;
     while (_pHead != NULL) {
         L1Item<T> *del = _pHead;
-        _pHead = _pHead->pNext;
+        _pHead         = _pHead->pNext;
         delete del;
     }
     _pLast = _pHead;
@@ -351,7 +365,7 @@ void L1List<T>::destroy() {
 
 /// Get the last node
 template <class T>
-T &L1List<T>::getLast() {
+T &L1List<T>::getLast () {
     T &ans = _pLast->data;
     return ans;
 }
@@ -361,14 +375,14 @@ T &L1List<T>::getLast() {
  ************************************************************************/
 template <class T>
 struct AVLNode {
-    T _data;
+    T           _data;
     AVLNode<T> *_pLeft, *_pRight;
 #ifdef AVL_USE_HEIGHT
     int _height;
-    AVLNode(T &a) : _data(a), _pLeft(NULL), _pRight(NULL), _height(1) {}
+    AVLNode (T &a) : _data (a), _pLeft (NULL), _pRight (NULL), _height (1) {}
 #else
     int _bFactor;
-    AVLNode(T &a) : _data(a), _pLeft(NULL), _pRight(NULL), _bFactor(0) {}
+    AVLNode (T &a) : _data (a), _pLeft (NULL), _pRight (NULL), _bFactor (0) {}
 #endif
 };
 
@@ -377,240 +391,255 @@ class AVLTree {
     AVLNode<T> *_pRoot;
 
    public:
-    AVLTree() : _pRoot(NULL) {}
-    ~AVLTree() { destroy(_pRoot); }
-
-    bool find(T &key, T *&ret) { return find(_pRoot, key, ret); }
-    bool insert(T &key) { return insert(_pRoot, key); }
-    bool remove(T &key) { return remove(_pRoot, key); }
-    void traverseNLR(void (*op)(T &)) { traverseNLR(_pRoot, op); }
-    void traverseLNR(void (*op)(T &)) { traverseLNR(_pRoot, op); }
-    void traverseLRN(void (*op)(T &)) { traverseLRN(_pRoot, op); }
-    void printNLR() {
-        _printNLR(_pRoot);
+    AVLTree () : _pRoot (NULL) {}
+    ~AVLTree () { destroy (_pRoot); }
+    bool find (T &key, T *&ret) { return find (_pRoot, key, ret); }
+    bool insert (T &key) { return insert (_pRoot, key); }
+    bool remove (T &key) { return remove (_pRoot, key); }
+    void            traverseNLR (void (*op) (T &)) { traverseNLR (_pRoot, op); }
+    void            traverseLNR (void (*op) (T &)) { traverseLNR (_pRoot, op); }
+    void            traverseLRN (void (*op) (T &)) { traverseLRN (_pRoot, op); }
+    void            printNLR () {
+        _printNLR (_pRoot);
         cout << endl;
     }
+    void destroy () { destroy (_pRoot); }
 
    protected:
-    void _printNLR(AVLNode<T> *&_pR) {
+    void _printNLR (AVLNode<T> *&_pR) {
         if (_pR == NULL) return;
         cout << _pR->_data << " ";
-        _printNLR(_pR->_pLeft);
-        _printNLR(_pR->_pRight);
+        _printNLR (_pR->_pLeft);
+        _printNLR (_pR->_pRight);
     }
-    void destroy(AVLNode<T> *&pR) {
+    void destroy (AVLNode<T> *&pR) {
         if (pR == NULL) return;
-        destroy(pR->_pLeft);
-        destroy(pR->_pRight);
-        delete pR;
+        destroy (pR->_pLeft);
+        destroy (pR->_pRight);
         pR = NULL;
     }
-    bool find(AVLNode<T> *pR, T &key, T *&ret) {
+    bool find (AVLNode<T> *pR, T &key, T *&ret) {
         if (pR == NULL)
             return false;
         else if (pR->_data == key) {
             ret = &(pR->data);
             return true;
-        } else if (pR->data > key) {
-            find(pR->_pLeft, key, ret);
-        } else
-            find(pR->_pRight, key, ret);
+        }
+        else if (pR->data > key) {
+            find (pR->_pLeft, key, ret);
+        }
+        else
+            find (pR->_pRight, key, ret);
     }
-    bool insert(AVLNode<T> *&pR, T &a) {
+    bool insert (AVLNode<T> *&pR, T &a) {
 #ifdef AVL_USE_HEIGHT
         if (pR == NULL) {
-            pR = new AVLNode<T>(a);
+            pR = new AVLNode<T> (a);
             return true;
-        } else if (pR->_data > a)
-            insert(pR->_pLeft, a);
+        }
+        else if (pR->_data > a)
+            insert (pR->_pLeft, a);
         else
-            insert(pR->_pRight, a);
-        reBalance(pR);
+            insert (pR->_pRight, a);
+        reBalance (pR);
         return true;
 #else
         if (pR == NULL) {
-            pR = new AVLNode<T>(a);
+            pR = new AVLNode<T> (a);
             return true;
-        } else if (pR->_data > a) {
-            if (insert(pR->_pLeft, a)) {  // left higher after insertion
-                pR->_bFactor++;           // update bFactor of pR
+        }
+        else if (pR->_data > a) {
+            if (insert (pR->_pLeft, a)) {  // left higher after insertion
+                pR->_bFactor++;            // update bFactor of pR
                 if (pR->_bFactor == 1) return true;
                 if (pR->_bFactor == 0) return false;
-                return balanceLeft(pR);  // true if not destroy the balance but increase the height
+                return balanceLeft (pR);  // true if not destroy the balance but increase the height
             }
             return false;
-        } else {
-            if (insert(pR->_pRight, a)) {  // right higher after insertion
+        }
+        else {
+            if (insert (pR->_pRight, a)) {  // right higher after insertion
                 pR->_bFactor--;
                 if (pR->_bFactor == -1) return true;
                 if (pR->_bFactor == 0) return false;
-                return balanceRight(pR);
+                return balanceRight (pR);
             }
             return false;
         }
 #endif
     }
-    bool remove(AVLNode<T> *&pR, T &a) {
+    bool remove (AVLNode<T> *&pR, T &a) {
 #ifdef AVL_USE_HEIGHT
         if (pR == NULL) return false;
-        if (a < pR->_data) {
-            remove(pR->_pLeft, a);
-        } else if (a > pR->_data) {
-            remove(pR->_pRight, a);
-        } else {
+        if (a < pR->_data) { remove (pR->_pLeft, a); }
+        else if (a > pR->_data) {
+            remove (pR->_pRight, a);
+        }
+        else {
             if (pR->_pRight == NULL && pR->_pLeft == NULL) {
                 AVLNode<T> *p = pR;
-                pR = NULL;
+                pR            = NULL;
                 delete p;
                 return true;
-            } else if (pR->_pRight == NULL) {
+            }
+            else if (pR->_pRight == NULL) {
                 AVLNode<T> *t = pR;
-                pR = pR->_pLeft;
+                pR            = pR->_pLeft;
                 delete t;
                 return true;
-            } else {
-                AVLNode<T> *t = pR->_pRight;
+            }
+            else {
+                AVLNode<T> *t       = pR->_pRight;
                 while (t->_pLeft) t = t->_pLeft;
-                pR->_data = t->_data;
-                return remove(pR->_pRight, t->_data);
+                pR->_data           = t->_data;
+                return remove (pR->_pRight, t->_data);
             }
         }
-        reBalance(pR);
+        reBalance (pR);
         return true;
 #else
         if (pR == NULL) return false;
         if (a < pR->_data) {
-            if (remove(pR->_pLeft, a))  // left shorter , right higher
+            if (remove (pR->_pLeft, a))  // left shorter , right higher
             {
                 pR->_bFactor--;
                 if (pR->_bFactor == -1) return false;
                 if (pR->_bFactor == 0) return true;
-                return !balanceRight(pR);
+                return !balanceRight (pR);
             }
             return false;
-        } else if (a > pR->_data) {
-            if (remove(pR->_pRight, a))  // right shorter , left higher
+        }
+        else if (a > pR->_data) {
+            if (remove (pR->_pRight, a))  // right shorter , left higher
             {
                 pR->_bFactor++;
                 if (pR->_bFactor == 1) return false;
                 if (pR->_bFactor == 0) return true;
-                return !balanceLeft(pR);
+                return !balanceLeft (pR);
             }
             return false;
-        } else {
+        }
+        else {
             if (pR->_pRight == NULL && pR->_pLeft == NULL) {
                 AVLNode<T> *p = pR;
-                pR = NULL;
+                pR            = NULL;
                 delete p;
                 return true;
-            } else if (pR->_pRight == NULL) {
+            }
+            else if (pR->_pRight == NULL) {
                 AVLNode<T> *t = pR;
-                pR = pR->_pLeft;
+                pR            = pR->_pLeft;
                 delete t;
                 return true;
-            } else {
-                AVLNode<T> *t = pR->_pRight;
+            }
+            else {
+                AVLNode<T> *t       = pR->_pRight;
                 while (t->_pLeft) t = t->_pLeft;
-                pR->_data = t->_data;
-                if (remove(pR->_pRight, t->_data)) {
+                pR->_data           = t->_data;
+                if (remove (pR->_pRight, t->_data)) {
                     pR->_bFactor++;
                     if (pR->_bFactor == 1) return false;
                     if (pR->_bFactor == 0) return true;
-                    return !balanceLeft(pR);
+                    return !balanceLeft (pR);
                 }
                 return false;
             }
         }
 #endif
     }
-    void traverseNLR(AVLNode<T> *pR, void (*op)(T &)) {
+    void traverseNLR (AVLNode<T> *pR, void (*op) (T &)) {
         if (pR == NULL) return;
-        op(pR->data);
-        traverseNLR(pR->_pLeft, op);
-        traverseNLR(pR->_pRight, op);
+        op (pR->data);
+        traverseNLR (pR->_pLeft, op);
+        traverseNLR (pR->_pRight, op);
     }
-    void traverseLNR(AVLNode<T> *pR, void (*op)(T &)) {
-        traverseLNR(pR->_pLeft, op);
+    void traverseLNR (AVLNode<T> *pR, void (*op) (T &)) {
+        traverseLNR (pR->_pLeft, op);
         if (pR == NULL) return;
-        op(pR->data);
-        traverseLNR(pR->_pRight, op);
+        op (pR->data);
+        traverseLNR (pR->_pRight, op);
     }
-    void traverseLRN(AVLNode<T> *pR, void (*op)(T &)) {
-        traverseLRN(pR->_pLeft, op);
-        traverseLRN(pR->_pRight, op);
+    void traverseLRN (AVLNode<T> *pR, void (*op) (T &)) {
+        traverseLRN (pR->_pLeft, op);
+        traverseLRN (pR->_pRight, op);
         if (pR == NULL) return;
-        op(pR->data);
+        op (pR->data);
     }
 #ifdef AVL_USE_HEIGHT
-    int max(int a, int b) { return (a > b) ? a : b; }
-    int ResetHeight(AVLNode<T> *&pR) {
+    int max (int a, int b) { return (a > b) ? a : b; }
+    int ResetHeight (AVLNode<T> *&pR) {
         if (pR == NULL)
             return 0;
         else if (pR->_pRight == NULL && pR->_pLeft == NULL) {
             pR->_height = 1;
             return 1;
-        } else {
-            pR->_height = max(ResetHeight(pR->_pRight), ResetHeight(pR->_pLeft)) + 1;
+        }
+        else {
+            pR->_height = max (ResetHeight (pR->_pRight), ResetHeight (pR->_pLeft)) + 1;
             return pR->_height;
         }
     }
-    int GetBalanceFactor(AVLNode<T> *&pR) {
+    int GetBalanceFactor (AVLNode<T> *&pR) {
         if (pR == NULL) return 0;
         int a = (pR->_pLeft == NULL) ? 0 : pR->_pLeft->_height;
         int b = (pR->_pRight == NULL) ? 0 : pR->_pRight->_height;
         return a - b;
     }
-    void reBalance(AVLNode<T> *&pR) {
-        ResetHeight(pR);
-        balanceLeft(pR);
-        balanceRight(pR);
+    void reBalance (AVLNode<T> *&pR) {
+        ResetHeight (pR);
+        if (balanceLeft (pR)) return;
+        balanceRight (pR);
     }
 #endif
 
-    void rotLeft(AVLNode<T> *&pR) {
+    void rotLeft (AVLNode<T> *&pR) {
         AVLNode<T> *x = pR->_pRight;
         AVLNode<T> *y = x->_pLeft;
-        x->_pLeft = pR;
-        pR->_pRight = y;
-        pR = x;
+        x->_pLeft     = pR;
+        pR->_pRight   = y;
+        pR            = x;
 #ifndef AVL_USE_HEIGHT
         // recalculate bFactor
         pR->_bFactor++;
         pR->_pLeft->_bFactor += (pR->_bFactor + 2);
 #endif
     }
-    void rotRight(AVLNode<T> *&pR) {
+    void rotRight (AVLNode<T> *&pR) {
         AVLNode<T> *x = pR->_pLeft;
         AVLNode<T> *y = x->_pRight;
-        x->_pRight = pR;
-        pR->_pLeft = y;
-        pR = x;
+        x->_pRight    = pR;
+        pR->_pLeft    = y;
+        pR            = x;
 #ifndef AVL_USE_HEIGHT
         // recalculate bFactor
         pR->_bFactor--;
         pR->_pRight->_bFactor -= (pR->_bFactor + 2);
 #endif
     }
-    void rotLR(AVLNode<T> *&pR) {
-        rotLeft(pR->_pLeft);
-        rotRight(pR);
+    void rotLR (AVLNode<T> *&pR) {
+        rotLeft (pR->_pLeft);
+        rotRight (pR);
     }
-    void rotRL(AVLNode<T> *&pR) {
-        rotRight(pR->_pRight);
-        rotLeft(pR);
+    void rotRL (AVLNode<T> *&pR) {
+        rotRight (pR->_pRight);
+        rotLeft (pR);
     }
 
-    bool balanceLeft(AVLNode<T> *&pR) {
+    bool balanceLeft (AVLNode<T> *&pR) {
 // > 1 means the height of the left is greater then the right 2 units
 // return false if it's rebalanced (means that the height doesnt increase)
 #ifdef AVL_USE_HEIGHT
-        int b = GetBalanceFactor(pR);
-        int bL = GetBalanceFactor(pR->_pLeft);
-        if (b > 1 && bL >= 0)
-            rotRight(pR);
-        else if (b > 1 && bL < 0)
-            rotLR(pR);
-        return true;
+        int b  = GetBalanceFactor (pR);
+        int bL = GetBalanceFactor (pR->_pLeft);
+        if (b > 1 && bL >= 0) {
+            rotRight (pR);
+            return true;
+        }
+        else if (b > 1 && bL < 0) {
+            rotLR (pR);
+            return true;
+        }
+        return false;
 #else
         if (pR->_bFactor > 1 && pR->_pLeft->_bFactor >= 0) {
             /*           9                        7
@@ -621,8 +650,9 @@ class AVLTree {
              *   /   \
              *  4     6
              */
-            rotRight(pR);
-        } else if (pR->_bFactor > 1 && pR->_pLeft->_bFactor < 0) {
+            rotRight (pR);
+        }
+        else if (pR->_bFactor > 1 && pR->_pLeft->_bFactor < 0) {
             /*              11                      11                      9
              *            /   \                    /  \                   /    \
              *           7     12                 9    12                7     11
@@ -631,22 +661,26 @@ class AVLTree {
              *             /  \                / \
              *            8    10             5   8
              */
-            rotLR(pR);
+            rotLR (pR);
         }
         return !(pR->_bFactor == 0);  // balance for insertion, false to finish
 #endif
     }
-    bool balanceRight(AVLNode<T> *&pR) {
+    bool balanceRight (AVLNode<T> *&pR) {
 //< -1 means the height of the right is greater then the left 2 units
 // return false if the height doesnt increase
 #ifdef AVL_USE_HEIGHT
-        int b = GetBalanceFactor(pR);
-        int bR = GetBalanceFactor(pR->_pRight);
-        if (b < -1 && bR <= 0)
-            rotLeft(pR);
-        else if (b < -1 && bR > 0)
-            rotRL(pR);
-        return true;
+        int b  = GetBalanceFactor (pR);
+        int bR = GetBalanceFactor (pR->_pRight);
+        if (b < -1 && bR <= 0) {
+            rotLeft (pR);
+            return true;
+        }
+        else if (b < -1 && bR > 0) {
+            rotRL (pR);
+            return true;
+        }
+        return false;
 #else
         if (pR->_bFactor < -1 && pR->_pRight->_bFactor <= 0) {
             /*             5                           7
@@ -657,8 +691,9 @@ class AVLTree {
              *                  /  \
              *                 8    10
              */
-            rotLeft(pR);
-        } else if (pR->_bFactor < -1 && pR->_pRight->_bFactor > 0) {
+            rotLeft (pR);
+        }
+        else if (pR->_bFactor < -1 && pR->_pRight->_bFactor > 0) {
             /*              7                           7                           9
              *             / \                         /  \                       /    \
              *            5   11                      5    9                    7       11
@@ -667,7 +702,7 @@ class AVLTree {
              *             / \                               /  \
              *            8   10                            10  12
              */
-            rotRL(pR);
+            rotRL (pR);
         }
         return !(pR->_bFactor == 0);
 #endif

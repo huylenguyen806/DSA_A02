@@ -13,7 +13,6 @@ void display(L1List<VM_Record> &bList) {
 }
 
 int main(int narg, char **argv) {
-    /*
     L1List<VM_Request> requestList;
     L1List<VM_Record> db;
 
@@ -24,23 +23,23 @@ int main(int narg, char **argv) {
 
     process(requestList, db);
 
-    cout << resetiosflags(ios::showbase) << setprecision(-1);*/
+    cout << resetiosflags(ios::showbase) << setprecision(-1);
 
-    AVLTree<int> tree;
-    int a[20] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
-    for(int i = 0; i < 20; ++i)
-    {
-        tree.insert(a[i]);
-    }
-    tree.printNLR();
+    // AVLTree<int> tree;
+    // int a[20] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
+    // for(int i = 0; i < 20; ++i)
+    // {
+    //     tree.insert(a[i]);
+    // }
+    // tree.printNLR();
 
-    int s = 6;
-    tree.remove(s);
-    s =5;
-    tree.remove(s);
-    s = 7;
-    tree.remove(s);
-    tree.printNLR();
+    // int s = 6;
+    // tree.remove(s);
+    // s =5;
+    // tree.remove(s);
+    // s = 7;
+    // tree.remove(s);
+    // tree.printNLR();
 
     return 0;
 }

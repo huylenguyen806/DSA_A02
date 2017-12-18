@@ -14,10 +14,10 @@
 #ifndef DSA171A2_REQUESTLIB_H
 #define DSA171A2_REQUESTLIB_H
 
+#include <string.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string.h>
 #include <string>
 
 #include "dsaLib.h"
@@ -31,23 +31,21 @@
 using namespace std;
 
 typedef struct VM_Request {
-    char code[REQUEST_CODE_SIZE];
+    char   code[REQUEST_CODE_SIZE];
     double params[MAX_PARAM_SIZE];
 
-    VM_Request() {
-        *code = '0'; // default event is "0"
+    VM_Request () {
+        *code   = '0';  // default event is "0"
         code[1] = 0;
     }
-    VM_Request(char *str) { strncpy(code, str, REQUEST_CODE_SIZE - 1); }
-    VM_Request(string &str) {
-        strncpy(code, str.data(), REQUEST_CODE_SIZE - 1);
-    }
-    VM_Request(VM_Request &a) { // copy constructor
-        memcpy(code, a.code, REQUEST_CODE_SIZE);
-        memcpy(params, a.params, MAX_PARAM_SIZE * sizeof(double));
+    VM_Request (char *str) { strncpy (code, str, REQUEST_CODE_SIZE - 1); }
+    VM_Request (string &str) { strncpy (code, str.data (), REQUEST_CODE_SIZE - 1); }
+    VM_Request (VM_Request &a) {  // copy constructor
+        memcpy (code, a.code, REQUEST_CODE_SIZE);
+        memcpy (params, a.params, MAX_PARAM_SIZE * sizeof (double));
     }
 
-    VM_Request(VM_Request &&a) { // move constructor
+    VM_Request (VM_Request &&a) {  // move constructor
         int i = 0;
         while (a.code[i]) {
             code[i] = a.code[i];
@@ -56,9 +54,9 @@ typedef struct VM_Request {
         code[i] = 0;
     }
 
-    bool operator==(VM_Request &b) { return strcmp(code, b.code) == 0; }
+    bool operator== (VM_Request &b) { return strcmp (code, b.code) == 0; }
 } VM_Request;
 
-void loadRequests(char *fName, L1List<VM_Request> &);
+void loadRequests (char *fName, L1List<VM_Request> &);
 
-#endif // DSA171A2_REQUESTLIB_H
+#endif  // DSA171A2_REQUESTLIB_H
