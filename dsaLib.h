@@ -85,7 +85,15 @@ class L1List {
         return false;
     }
 
-    bool traverse (std::function<void(void *&, T &)> op, void *&pGData) {
+    // void traverse (std::function<void(void *&, T &)> op, void *&pGData) {
+    //     L1Item<T> *p = _pHead;
+    //     while (p) {
+    //         op (pGData, p->data);
+    //         p = p->pNext;
+    //     }
+    // }
+
+    void traverse (void (*op) (void *&, T &), void *&pGData) {
         L1Item<T> *p = _pHead;
         while (p) {
             op (pGData, p->data);
@@ -392,14 +400,33 @@ class AVLTree {
 
    public:
     AVLTree () : _pRoot (NULL) {}
+    AVLTree (T &a) { _pRoot = new AVLNode<T> (a); }
     ~AVLTree () { destroy (_pRoot); }
     bool find (T &key, T *&ret) { return find (_pRoot, key, ret); }
     bool insert (T &key) { return insert (_pRoot, key); }
     bool remove (T &key) { return remove (_pRoot, key); }
     void            traverseNLR (void (*op) (T &)) { traverseNLR (_pRoot, op); }
-    void            traverseLNR (void (*op) (T &)) { traverseLNR (_pRoot, op); }
-    void            traverseLRN (void (*op) (T &)) { traverseLRN (_pRoot, op); }
-    void            printNLR () {
+    void traverseNLR (void (*op) (void *&, T &), void *&pGD) { traverseNLR (_pRoot, op, pGD); }
+    void traverseLNR (void (*op) (T &)) { traverseLNR (_pRoot, op); }
+    bool traverseLNR (std::function<bool(double, T &)> op, double _lo) {
+        if (_pRoot == NULL)
+            return false;
+        else
+            return traverseLNR (_pRoot, op, _lo);
+    }
+    bool traverseLNR (std::function<bool(double, double, double, T &)> op, double _la, double _lo,
+                      double _r) {
+        if (_pRoot == NULL)
+            return false;
+        else
+            return traverseLNR (_pRoot, op, _la, _lo, _r);
+    }
+    void traverseLNR (std::function<void(T &, T &)> op, T &startIn) {
+        traverseLNR (_pRoot, op, startIn);
+    }
+    void traverseLNR (std::function<void(T &)> op) { traverseLNR (_pRoot, op); }
+    void traverseLRN (void (*op) (T &)) { traverseLRN (_pRoot, op); }
+    void printNLR () {
         _printNLR (_pRoot);
         cout << endl;
     }
@@ -422,10 +449,10 @@ class AVLTree {
         if (pR == NULL)
             return false;
         else if (pR->_data == key) {
-            ret = &(pR->data);
+            *ret = (pR->_data);
             return true;
         }
-        else if (pR->data > key) {
+        else if (pR->_data > key) {
             find (pR->_pLeft, key, ret);
         }
         else
@@ -549,21 +576,66 @@ class AVLTree {
     }
     void traverseNLR (AVLNode<T> *pR, void (*op) (T &)) {
         if (pR == NULL) return;
-        op (pR->data);
+        op (pR->_data);
+        traverseNLR (pR->_pLeft, op);
+        traverseNLR (pR->_pRight, op);
+    }
+    void traverseNLR (AVLNode<T> *pR, void (*op) (void *&, T &), void *&pGD) {
+        if (pR == NULL) return;
+        op (pGD, pR->_data);
         traverseNLR (pR->_pLeft, op);
         traverseNLR (pR->_pRight, op);
     }
     void traverseLNR (AVLNode<T> *pR, void (*op) (T &)) {
-        traverseLNR (pR->_pLeft, op);
         if (pR == NULL) return;
-        op (pR->data);
+        traverseLNR (pR->_pLeft, op);
+        op (pR->_data);
         traverseLNR (pR->_pRight, op);
     }
+    void traverseLNR (AVLNode<T> *pR, std::function<void(T &, T &)> op, T &startIn) {
+        if (pR == NULL) return;
+        traverseLNR (pR->_pLeft, op);
+        op (pR->_data, startIn);
+        traverseLNR (pR->_pRight, op);
+    }
+    void traverseLNR (AVLNode<T> *pR, std::function<void(T &)> op) {
+        if (pR == NULL) return;
+        traverseLNR (pR->_pLeft, op);
+        op (pR->_data);
+        traverseLNR (pR->_pRight, op);
+    }
+    bool traverseLNR (AVLNode<T> *pR, std::function<bool(double, T &)> op, double _lo) {
+        if (pR == NULL) return true;
+        // traverse left
+        if (!traverseLNR (pR->_pLeft, op, _lo)) return false;
+        // visit the root
+        else if (!op (_lo, pR->_data))
+            return false;
+        // traverse right
+        else if (!traverseLNR (pR->_pRight, op, _lo))
+            return false;
+        else
+            return true;
+    }
+    bool traverseLNR (AVLNode<T> *pR, std::function<bool(double, double, double, T &)> op,
+                      double _la, double _lo, double _r) {
+        if (pR == NULL) return true;
+        // traverse left
+        if (traverseLNR (pR->_pLeft, op, _la, _lo, _r)) return true;
+        // visit the root
+        else if (op (_la, _lo, _r, pR->_data))
+            return true;
+        // traverse right
+        else if (traverseLNR (pR->_pRight, op, _la, _lo, _r))
+            return true;
+        else
+            return false;
+    }
     void traverseLRN (AVLNode<T> *pR, void (*op) (T &)) {
+        if (pR == NULL) return;
         traverseLRN (pR->_pLeft, op);
         traverseLRN (pR->_pRight, op);
-        if (pR == NULL) return;
-        op (pR->data);
+        op (pR->_data);
     }
 #ifdef AVL_USE_HEIGHT
     int max (int a, int b) { return (a > b) ? a : b; }

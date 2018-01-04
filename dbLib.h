@@ -94,10 +94,13 @@ class RecordData {
    public:
     AVLTree<VM_Record>* avltree;
     char                id[ID_MAX_LENGTH];
+    RecordData(){
+        avltree = new AVLTree<VM_Record>();
+        strcpy(id, "");
+    }
     RecordData (VM_Record& a) {
-        avltree = new AVLTree<VM_Record> ();
+        avltree = new AVLTree<VM_Record> (a);
         strcpy (id, a.id);
-        avltree->insert (a);
     }
     ~RecordData () {
         avltree->destroy ();
@@ -110,34 +113,53 @@ class RecordData {
 
 class Vehicle {
    public:
-    vector<RecordData> tag;
+    L1List<RecordData> tag;
     bool               init;
+    string             date;
     Vehicle () { init = false; }
-    ~Vehicle () { tag.clear (); }
-    void insert (RecordData& a) {
-        for (int i = 0; i < tag.size (); ++i) {
-            if (strcmp (tag[i].id, a.id) == 0) return;
-        }
-        tag.push_back (a);
-    }
-    void remove (RecordData& a) {
-        for (int i = 0; i < tag.size (); ++i) {
-            if (strcmp (tag[i].id, a.id) == 0) {
-                tag.erase (tag.begin () + i);
-                return;
-            }
-        }
-    }
+    ~Vehicle () { tag.destroy(); }
+    // void insert (RecordData& a) {
+    //     for (int i = 0; i < tag.size (); ++i) {
+    //         if (strcmp (tag[i].id, a.id) == 0) return;
+    //     }
+    //     tag.push_back (a);
+    // }
+    // void remove (RecordData& a) {
+    //     for (int i = 0; i < tag.size (); ++i) {
+    //         if (strcmp (tag[i].id, a.id) == 0) {
+    //             tag.erase (tag.begin () + i);
+    //             return;
+    //         }
+    //     }
+    // }
     void insert (VM_Record& a) {
-        for (int i = 0; i < tag.size (); ++i) {
-            if (strcmp (tag[i].id, a.id) == 0) {
-                tag[i].insert (a);
+        // for (int i = 0; i < tag.size (); ++i) {
+        //     if (strcmp (tag[i].id, a.id) == 0) {
+        //         tag[i].insert (a);
+        //         return;
+        //     }
+        // }
+        L1Item<RecordData> *p = tag.pointerHead();
+        while(p)
+        {
+            if(strcmp((p->data).id, a.id) == 0){
+                (p->data).insert(a);
                 return;
             }
+            p = p->pNext;
         }
-        RecordData b (a);
-        tag.push_back (b);
+        RecordData *b = new RecordData(a);
+        tag.insertTail(*b);
     }
 };
+
+struct IDandDistance{
+    char id[ID_MAX_LENGTH];
+    double distance;
+};
+
+void MergeSort(vector<IDandDistance> &a){
+    
+}
 
 #endif  // DSA171A2_DBLIB_H

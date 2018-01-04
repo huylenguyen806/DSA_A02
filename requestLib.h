@@ -39,7 +39,7 @@ typedef struct VM_Request {
         code[1] = 0;
     }
     VM_Request (char *str) { strncpy (code, str, REQUEST_CODE_SIZE - 1); }
-    VM_Request (string &str) { strncpy (code, str.data (), REQUEST_CODE_SIZE - 1); }
+    VM_Request (string &str) { strcpy (code, str.data ()); }
     VM_Request (VM_Request &a) {  // copy constructor
         memcpy (code, a.code, REQUEST_CODE_SIZE);
         memcpy (params, a.params, MAX_PARAM_SIZE * sizeof (double));

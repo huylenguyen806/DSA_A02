@@ -76,7 +76,7 @@ bool parseVMRecord (char *pBuf, VM_Record &bInfo) {
     strcpy (bInfo.id, _id.c_str ());
     // Get time
     tm tm;
-    strptime (_Col_time.c_str (), "%m/%d/%yyyy %H:%M:%S", &tm);
+    strptime (_Col_time.c_str (), "%m/%d/%Y %H:%M:%S", &tm);
     bInfo.timestamp = timegm (&tm);
     // Get longitude
     stringstream (_longitude) >> bInfo.longitude;
