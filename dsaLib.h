@@ -403,6 +403,12 @@ class AVLTree {
     AVLTree (T &a) { _pRoot = new AVLNode<T> (a); }
     ~AVLTree () { destroy (_pRoot); }
     bool find (T &key, T *&ret) { return find (_pRoot, key, ret); }
+    bool searchWithCondition (std::function<bool(T &)> op, T &min, T &max) {
+        return searchWithCondition (_pRoot, op, min, max);
+    }
+    void traverseWithCondition (std::function<void(T &)> op, T &min, T &max) {
+        traverseWithCondition (_pRoot, op, min, max);
+    }
     bool insert (T &key) { return insert (_pRoot, key); }
     bool remove (T &key) { return remove (_pRoot, key); }
     void            traverseNLR (void (*op) (T &)) { traverseNLR (_pRoot, op); }
@@ -433,6 +439,39 @@ class AVLTree {
     void destroy () { destroy (_pRoot); }
 
    protected:
+    bool searchWithCondition (AVLNode<T> *&pR, std::function<bool(T &)> op, T &min, T &max) {
+        if (pR == NULL)
+            return false;
+        else if (pR->_data >= min && pR->_data <= max) {  // meat the range
+            if (op (pR->_data))
+                return true;
+            else if (searchWithCondition (pR->_pLeft, op, min, max))
+                return true;
+            else if (searchWithCondition (pR->_pRight, op, min, max))
+                return true;
+            else
+                return false;
+        }
+        else if (pR->_data < min) {  // smaller than the min, search the right (the right always
+                                     // greater then the root)
+            return searchWithCondition (pR->_pRight, op, min, max);
+        }
+        else  // greater than the max, search the left (the left always smaller then the root)
+            return searchWithCondition (pR->_pLeft, op, min, max);
+    }
+    void traverseWithCondition (AVLNode<T> *&pR, std::function<void(T &)> op, T &min, T &max) {
+        if (pR == NULL)
+            return;
+        else if (pR->_data >= min && pR->_data <= max) {
+            op (pR->_data);
+            traverseWithCondition (pR->_pLeft, op, min, max);
+            traverseWithCondition (pR->_pRight, op, min, max);
+        }
+        else if (pR->_data < min)
+            traverseWithCondition (pR->_pRight, op, min, max);
+        else
+            traverseWithCondition (pR->_pLeft, op, min, max);
+    }
     void _printNLR (AVLNode<T> *&_pR) {
         if (_pR == NULL) return;
         cout << _pR->_data << " ";
@@ -449,14 +488,14 @@ class AVLTree {
         if (pR == NULL)
             return false;
         else if (pR->_data == key) {
-            *ret = (pR->_data);
+            ret = &(pR->_data);
             return true;
         }
         else if (pR->_data > key) {
-            find (pR->_pLeft, key, ret);
+            return find (pR->_pLeft, key, ret);
         }
         else
-            find (pR->_pRight, key, ret);
+            return find (pR->_pRight, key, ret);
     }
     bool insert (AVLNode<T> *&pR, T &a) {
 #ifdef AVL_USE_HEIGHT

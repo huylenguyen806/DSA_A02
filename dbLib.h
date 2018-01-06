@@ -91,75 +91,86 @@ inline bool operator!= (VM_Record& n1, VM_Record& n2) {
 }
 
 class RecordData {
+   private:
+    unsigned int size = 0;
+    void initMaxMin (VM_Record& a) {
+        maxLongitude = a.longitude;
+        minLongitude = a.longitude;
+        maxLatitude  = a.latitude;
+        minLatitude  = a.latitude;
+    }
+
    public:
     AVLTree<VM_Record>* avltree;
     char                id[ID_MAX_LENGTH];
-    RecordData(){
-        avltree = new AVLTree<VM_Record>();
-        strcpy(id, "");
+    double              maxLongitude, minLongitude, maxLatitude, minLatitude;
+    bool                enable = true;  // if false, it means this vehicle's route is canceled
+    RecordData () {
+        avltree = new AVLTree<VM_Record> ();
+        strcpy (id, "");
     }
     RecordData (VM_Record& a) {
         avltree = new AVLTree<VM_Record> (a);
         strcpy (id, a.id);
+        initMaxMin (a);
+        size = 1;
     }
     ~RecordData () {
         avltree->destroy ();
         avltree = NULL;
     }
-
-    void insert (VM_Record& a) { avltree->insert (a); }
+    void insert (VM_Record& a) {
+        avltree->insert (a);
+        if (size == 0) { initMaxMin (a); }
+        else {
+            if (a.longitude > maxLongitude)
+                maxLongitude = a.longitude;
+            else if (a.longitude < minLongitude)
+                minLongitude = a.longitude;
+            if (a.latitude > maxLatitude)
+                maxLatitude = a.latitude;
+            else if (a.latitude < minLatitude)
+                minLatitude = a.latitude;
+        }
+        size++;
+    }
     void remove (VM_Record& a) { avltree->remove (a); }
+    bool operator< (RecordData& n) { return strcmp (this->id, n.id) < 0; }
+    bool operator> (RecordData& n) { return strcmp (this->id, n.id) > 0; }
+    bool operator<= (RecordData& n) { return strcmp (this->id, n.id) <= 0; }
+    bool operator>= (RecordData& n) { return strcmp (this->id, n.id) >= 0; }
+    bool operator== (RecordData& n) { return strcmp (this->id, n.id) == 0; }
+    bool operator!= (RecordData& n) { return strcmp (this->id, n.id) != 0; }
 };
 
 class Vehicle {
    public:
-    L1List<RecordData> tag;
-    bool               init;
-    string             date;
-    Vehicle () { init = false; }
-    ~Vehicle () { tag.destroy(); }
-    // void insert (RecordData& a) {
-    //     for (int i = 0; i < tag.size (); ++i) {
-    //         if (strcmp (tag[i].id, a.id) == 0) return;
-    //     }
-    //     tag.push_back (a);
-    // }
-    // void remove (RecordData& a) {
-    //     for (int i = 0; i < tag.size (); ++i) {
-    //         if (strcmp (tag[i].id, a.id) == 0) {
-    //             tag.erase (tag.begin () + i);
-    //             return;
-    //         }
-    //     }
-    // }
+    AVLTree<RecordData>* tag;
+    bool                 init;
+    string               date;
+    Vehicle () {
+        tag  = new AVLTree<RecordData> ();
+        init = false;
+    }
+    ~Vehicle () {
+        tag->destroy ();
+        tag = NULL;
+    }
     void insert (VM_Record& a) {
-        // for (int i = 0; i < tag.size (); ++i) {
-        //     if (strcmp (tag[i].id, a.id) == 0) {
-        //         tag[i].insert (a);
-        //         return;
-        //     }
-        // }
-        L1Item<RecordData> *p = tag.pointerHead();
-        while(p)
-        {
-            if(strcmp((p->data).id, a.id) == 0){
-                (p->data).insert(a);
-                return;
-            }
-            p = p->pNext;
-        }
-        RecordData *b = new RecordData(a);
-        tag.insertTail(*b);
+        RecordData* b = new RecordData (a);
+        if (tag->find (*b, b)) { b->insert (a); }
+        else
+            tag->insert (*b);
     }
 };
 
-struct IDandDistance{
-    char id[ID_MAX_LENGTH];
-    double distance;
-};
+// struct IDandDistance{
+//     char id[ID_MAX_LENGTH];
+//     double distance;
+// };
 
-void MergeSort(vector<IDandDistance> &a){
-    
-}
+// void MergeSort(vector<IDandDistance> &a){
+
+// }
 
 #endif  // DSA171A2_DBLIB_H

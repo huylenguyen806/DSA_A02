@@ -3,6 +3,7 @@
         "array": "cpp",
         "iomanip": "cpp",
         "functional": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "limits": "cpp"
     }
 }

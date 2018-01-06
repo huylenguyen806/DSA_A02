@@ -72,7 +72,6 @@ bool parseVMRecord (char *pBuf, VM_Record &bInfo) {
     getline (ss, _latitude, ',');
     getline (ss, _temp, '\n');
     // Get id
-    if (_id.length () < 4) _id = string (4 - _id.length (), '0') + _id;
     strcpy (bInfo.id, _id.c_str ());
     // Get time
     tm tm;

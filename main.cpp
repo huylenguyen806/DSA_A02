@@ -16,10 +16,10 @@ int main(int narg, char **argv) {
     L1List<VM_Request> requestList;
     L1List<VM_Record> db;
 
-    // loadRequests(argv[1], requestList);
-    // loadVMDB(argv[2], db);
-    loadRequests("/media/lordh/Projects/SecondYearOfBKU/DSAlgorithms/DSA_A02/events.txt", requestList);
-    loadVMDB("/media/lordh/Projects/SecondYearOfBKU/DSAlgorithms/DSA_A02/data-50000.csv", db);
+    loadRequests(argv[1], requestList);
+    loadVMDB(argv[2], db);
+    // loadRequests("/media/lordh/Projects/SecondYearOfBKU/DSAlgorithms/DSA_A02/events.txt", requestList);
+    // loadVMDB("/media/lordh/Projects/SecondYearOfBKU/DSAlgorithms/DSA_A02/data.csv", db);
 
     cout << fixed << setprecision(12);  // preset for floating point numbers
 
