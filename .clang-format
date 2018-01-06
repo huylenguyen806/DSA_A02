@@ -6,12 +6,19 @@ AllowShortBlocksOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
 BinPackParameters: true
 ColumnLimit: 100
 AlignTrailingComments: true
 BreakBeforeBraces: Custom
 BraceWrapping: 
     BeforeElse: true
-SpaceBeforeParens: Always
+    AfterFunction: false
+    AfterStruct: false
+SpaceBeforeParens: ControlStatements
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
+AlwaysBreakTemplateDeclarations: true
+AlwaysBreakAfterReturnType: None
+MaxEmptyLinesToKeep: 0
+SpaceAfterCStyleCast: true
