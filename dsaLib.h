@@ -425,8 +425,8 @@ class AVLTree {
         if (pR == NULL)
             return;
         else if (pR->_data >= min && pR->_data <= max) {
-            op(pR->_data);
             traverseWithCondition(pR->_pLeft, op, min, max);
+            op(pR->_data);
             traverseWithCondition(pR->_pRight, op, min, max);
         }
         else if (pR->_data < min)
@@ -520,7 +520,7 @@ class AVLTree {
                 AVLNode<T> *t       = pR->_pRight;
                 while (t->_pLeft) t = t->_pLeft;
                 pR->_data           = t->_data;
-                return remove(pR->_pRight, t->_data);
+                remove(pR->_pRight, t->_data);
             }
         }
         reBalance(pR);
@@ -640,28 +640,33 @@ class AVLTree {
     }
 #ifdef AVL_USE_HEIGHT
     int max(int a, int b) { return (a > b) ? a : b; }
-    int ResetHeight(AVLNode<T> *&pR) {
-        if (pR == NULL)
-            return 0;
-        else if (pR->_pRight == NULL && pR->_pLeft == NULL) {
-            pR->_height = 1;
-            return 1;
-        }
-        else {
-            pR->_height = max(ResetHeight(pR->_pRight), ResetHeight(pR->_pLeft)) + 1;
-            return pR->_height;
-        }
+    int GetHeight(AVLNode<T> *&pR) {
+        if (pR == NULL) return 0;
+        return pR->_height;
+    }
+    void updateHeight(AVLNode<T> *&pR) {
+        if (pR == NULL) return;
+        pR->_height = max(GetHeight(pR->_pLeft), GetHeight(pR->_pRight)) + 1;
     }
     int GetBalanceFactor(AVLNode<T> *&pR) {
         if (pR == NULL) return 0;
-        int a = (pR->_pLeft == NULL) ? 0 : pR->_pLeft->_height;
-        int b = (pR->_pRight == NULL) ? 0 : pR->_pRight->_height;
-        return a - b;
+        return GetHeight(pR->_pLeft) - GetHeight(pR->_pRight);
     }
     void reBalance(AVLNode<T> *&pR) {
-        ResetHeight(pR);
-        if (balanceLeft(pR)) return;
-        balanceRight(pR);
+        updateHeight(pR);
+        int b  = GetBalanceFactor(pR);
+        int bL = GetBalanceFactor(pR->_pLeft);
+        int bR = GetBalanceFactor(pR->_pRight);
+        if (b > 1 && bL >= 0) { rotRight(pR); }
+        else if (b > 1 && bL < 0) {
+            rotLR(pR);
+        }
+        else if (b < -1 && bR <= 0) {
+            rotLeft(pR);
+        }
+        else if (b < -1 && bR > 0) {
+            rotRL(pR);
+        }
     }
 #endif
     void rotLeft(AVLNode<T> *&pR) {
@@ -670,7 +675,11 @@ class AVLTree {
         x->_pLeft     = pR;
         pR->_pRight   = y;
         pR            = x;
-#ifndef AVL_USE_HEIGHT
+#ifdef AVL_USE_HEIGHT
+        // update height
+        updateHeight(pR->_pLeft);
+        updateHeight(pR);
+#else
         // recalculate bFactor
         pR->_bFactor++;
         pR->_pLeft->_bFactor += (pR->_bFactor + 2);
@@ -682,7 +691,11 @@ class AVLTree {
         x->_pRight    = pR;
         pR->_pLeft    = y;
         pR            = x;
-#ifndef AVL_USE_HEIGHT
+#ifdef AVL_USE_HEIGHT
+        // update height
+        updateHeight(pR->_pRight);
+        updateHeight(pR);
+#else
         // recalculate bFactor
         pR->_bFactor--;
         pR->_pRight->_bFactor -= (pR->_bFactor + 2);
@@ -697,21 +710,8 @@ class AVLTree {
         rotLeft(pR);
     }
     bool balanceLeft(AVLNode<T> *&pR) {
-// > 1 means the height of the left is greater then the right 2 units
-// return false if it's rebalanced (means that the height doesnt increase)
-#ifdef AVL_USE_HEIGHT
-        int b  = GetBalanceFactor(pR);
-        int bL = GetBalanceFactor(pR->_pLeft);
-        if (b > 1 && bL >= 0) {
-            rotRight(pR);
-            return true;
-        }
-        else if (b > 1 && bL < 0) {
-            rotLR(pR);
-            return true;
-        }
-        return false;
-#else
+        // > 1 means the height of the left is greater then the right 2 units
+        // return false if it's rebalanced (means that the height doesnt increase)
         if (pR->_bFactor > 1 && pR->_pLeft->_bFactor >= 0) {
             /*           9                        7
              *         /   \                   /     \
@@ -735,24 +735,10 @@ class AVLTree {
             rotLR(pR);
         }
         return !(pR->_bFactor == 0);  // balance for insertion, false to finish
-#endif
     }
     bool balanceRight(AVLNode<T> *&pR) {
-//< -1 means the height of the right is greater then the left 2 units
-// return false if the height doesnt increase
-#ifdef AVL_USE_HEIGHT
-        int b  = GetBalanceFactor(pR);
-        int bR = GetBalanceFactor(pR->_pRight);
-        if (b < -1 && bR <= 0) {
-            rotLeft(pR);
-            return true;
-        }
-        else if (b < -1 && bR > 0) {
-            rotRL(pR);
-            return true;
-        }
-        return false;
-#else
+        //< -1 means the height of the right is greater then the left 2 units
+        // return false if the height doesnt increase
         if (pR->_bFactor < -1 && pR->_pRight->_bFactor <= 0) {
             /*             5                           7
              *           /   \                      /     \
@@ -776,7 +762,6 @@ class AVLTree {
             rotRL(pR);
         }
         return !(pR->_bFactor == 0);
-#endif
     }
 };
 #endif  // A02_DSALIB_H

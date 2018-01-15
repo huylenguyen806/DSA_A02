@@ -272,49 +272,62 @@ bool request6(string code, Vehicle *&pGD, string &ans) {
         tm t;
         strptime(_time.c_str(), "%Y-%m-%d %H-%M-%S", &t);
         time_t                 InTime = timegm(&t);
-        AVLTree<IDandDistance> Under500m, Under300m, Under2km;
+        AVLTree<IDandDistance> Under500m, Under300m, Under2km, over500m;
         double                 _latitude, _longitude;
-        int                    M, u2kmSize = 0, u500mSize = 0, u300mSize = 0;
+        int                    M, u2kmSize = 0, u300mSize = 0;
         stringstream(_along) >> _longitude;
         stringstream(_alat) >> _latitude;
         stringstream(_M) >> M;
         VM_Record min, max;
         max.timestamp = InTime;
         min.timestamp = InTime - 15 * 60;
-        (pGD->tag)->traverseLNR([&u2kmSize, &u500mSize, &u300mSize, &Under2km, &Under300m,
-                                 &Under500m, _longitude, _latitude, &min, &max](RecordData &r) {
+        (pGD->tag)->traverseLNR([&u2kmSize, &u300mSize, &Under2km, &Under300m, &Under500m,
+                                 &over500m, _longitude, _latitude, &min, &max](RecordData &r) {
             if (r.enable) {
                 bool u2km = false, u500 = false, u300 = false;
                 (r.avltree)->traverseWithCondition(
-                    [&u2kmSize, &u500mSize, &u300mSize, &Under2km, &Under300m, &Under500m,
-                     _longitude, _latitude, &u2km, &u500, &u300](VM_Record &a) {
-                        IDandDistance dat(a.id);
-                        if (!u2km && IntoTheObservatory(_latitude, _longitude, 2.0, a.latitude,
-                                                        a.longitude)) {
-                            u2km = true;
-                            Under2km.insert(dat);
-                            u2kmSize++;
-                        }
-                        if (!u500 && IntoTheObservatory(_latitude, _longitude, 0.5, a.latitude,
-                                                        a.longitude)) {
-                            u500 = true;
-                            Under500m.insert(dat);
-                            u500mSize++;
-                        }
-                        if (!u300 && IntoTheObservatory(_latitude, _longitude, 0.3, a.latitude,
-                                                        a.longitude)) {
+                    [_longitude, _latitude, &u2km, &u500, &u300](VM_Record &a) {
+                        double dis =
+                            fabs(distanceEarth(_latitude, _longitude, a.latitude, a.longitude));
+                        if (dis - 0.3 <= GPS_DISTANCE_ERROR) {  // <= 300m
                             u300 = true;
-                            Under300m.insert(dat);
-                            u300mSize++;
+                            u500 = true;
+                            u2km = true;
+                        }
+                        else if (dis - 0.5 < GPS_DISTANCE_ERROR) {  // >300m and <500m
+                            u300 = false;
+                            u500 = true;
+                            u2km = true;
+                        }
+                        else if (dis - 2.0 <= GPS_DISTANCE_ERROR) {  // >= 500m and <= 2km
+                            u300 = false;
+                            u500 = false;
+                            u2km = true;
                         }
                     },
                     min, max);
+                IDandDistance *_elem = new IDandDistance(r.id);
+                if (u300) {
+                    Under300m.insert(*_elem);
+                    u300mSize++;
+                    Under500m.insert(*_elem);
+                    Under2km.insert(*_elem);
+                    u2kmSize++;
+                }
+                else if (u500) {
+                    Under500m.insert(*_elem);
+                    Under2km.insert(*_elem);
+                    u2kmSize++;
+                }
+                else if (u2km) {
+                    over500m.insert(*_elem);
+                    Under2km.insert(*_elem);
+                    u2kmSize++;
+                }
             }
         });
         if (u2kmSize < M) {
-            (pGD->tag)->traverseLNR([&In](RecordData &r) {
-                if (r.enable) { In += string(r.id) + " "; }
-            });
+            Under2km.traverseLNR([&In](IDandDistance &i) { In += string(i.id) + " "; });
             ans = In + "- ";
         }
         else {
@@ -322,20 +335,13 @@ bool request6(string code, Vehicle *&pGD, string &ans) {
                 // Only vehicle having the distance under 500m can go into the
                 // observatory
                 Under500m.traverseLNR([&In](IDandDistance &i) { In += string(i.id) + " "; });
-                (pGD->tag)->traverseLNR([&Out, &In](RecordData &r) {
-                    if (r.enable) {
-                        string id = string(r.id);
-                        if (In.find(id) == string::npos) Out += id + " ";
-                    }
-                });
-                Out.pop_back();
+                over500m.traverseLNR([&Out](IDandDistance &i) { Out += string(i.id) + " "; });
+                if (Out != "") Out.pop_back();
                 ans = In + "- " + Out;
             }
             else {
-                (pGD->tag)->traverseLNR([&Out](RecordData &r) {
-                    if (r.enable) { Out += string(r.id) + " "; }
-                });
-                Out.pop_back();
+                Under2km.traverseLNR([&Out](IDandDistance &i) { Out += string(i.id) + " "; });
+                if (Out != "") Out.pop_back();
                 ans = " - " + Out;
             }
         }
@@ -364,71 +370,81 @@ bool request7(string code, Vehicle *&pGD, string &ans) {
         VM_Record min, max;
         min.timestamp = OutTime;
         max.timestamp = OutTime + 30 * 60;
-        AVLTree<IDandDistance> under500m, f1kmto2km;
+        AVLTree<IDandDistance> f1kmto2km, u1km, u2km;
         unsigned int           under500mSize = 0, f1kmto2kmSize = 0;
         double                 _longitude, _latitude, _radius, M;
         stringstream(_along) >> _longitude;
         stringstream(_alat) >> _latitude;
         stringstream(_M) >> M;
         stringstream(_r) >> _radius;
-        (pGD->tag)->traverseLNR([&under500mSize, &f1kmto2kmSize, &under500m, &f1kmto2km, _longitude,
-                                 _latitude, &min, &max](RecordData &r) {
+        (pGD->tag)->traverseLNR([&under500mSize, &f1kmto2kmSize, &f1kmto2km, &u1km, &u2km,
+                                 _longitude, _latitude, &min, &max](RecordData &r) {
             if (r.enable) {
+                bool u500 = false, u1000 = false, f1to2 = false;
                 (r.avltree)->traverseWithCondition(
-                    [&under500mSize, &f1kmto2kmSize, &under500m, &f1kmto2km, _longitude,
-                     _latitude](VM_Record &a) {
+                    [&u500, &u1000, &f1to2, _longitude, _latitude](VM_Record &a) {
                         double dis =
                             fabs(distanceEarth(_latitude, _longitude, a.latitude, a.longitude));
-                        IDandDistance *_elem = new IDandDistance(a.id, dis);
-                        if (dis < 0.5) {
-                            if (!under500m.find(*_elem, _elem)) {
-                                under500m.insert(*_elem);
-                                under500mSize++;
-                            }
+                        if (dis - 0.5 <= GPS_DISTANCE_ERROR) {  // <= 500m
+                            u500  = true;
+                            u1000 = true;
+                            f1to2 = false;
                         }
-                        else if (dis >= 1.0 && dis <= 2.0) {
-                            if (f1kmto2km.find(*_elem, _elem)) {
-                                if (_elem->distance < dis) _elem->distance = dis;
-                            }
-                            else {
-                                f1kmto2km.insert(*_elem);
-                                f1kmto2kmSize++;
-                            }
+                        else if (dis - 1.0 < GPS_DISTANCE_ERROR) {  // > 500m and < 1km
+                            u500  = false;
+                            u1000 = true;
+                            f1to2 = false;
+                        }
+                        else if (dis - 2.0 <= GPS_DISTANCE_ERROR) {  // >= 1km and <= 2km
+                            u500  = false;
+                            u1000 = false;
+                            f1to2 = true;
                         }
                     },
                     min, max);
+                IDandDistance *_elem = new IDandDistance(r.id);
+                if (u500) {
+                    under500mSize++;
+                    u1km.insert(*_elem);
+                    u2km.insert(*_elem);
+                }
+                else if (u1000) {
+                    u1km.insert(*_elem);
+                    u2km.insert(*_elem);
+                }
+                else if (f1to2) {
+                    f1kmto2km.insert(*_elem);
+                    f1kmto2kmSize++;
+                    u2km.insert(*_elem);
+                }
             }
         });
-        if (under500mSize < 0.7 * M) {
+        if ((double) under500mSize < (double) (0.7 * M)) {
             // This means all vehicles ain't stuck
-            (pGD->tag)->traverseLNR([&NStuck](RecordData &r) {
-                if (r.enable) { NStuck += string(r.id) + " "; }
-            });
-            NStuck.pop_back();
+            u2km.traverseLNR([&NStuck](IDandDistance &i) { NStuck += string(i.id) + " "; });
+            if (NStuck != "") NStuck.pop_back();
             ans = "-1 - " + NStuck;
         }
         else {
-            // 75% of M vehicles in f1kmto2km isnt stuck, so remove the rest 25% in f1kmto2km
-            unsigned int N = M - (M * 75) / 100;
+            // 75% of f1kmto2km vehicles in f1kmto2km isnt stuck, so remove the rest 25% in
+            // f1kmto2km
+            unsigned int N = f1kmto2kmSize - (f1kmto2kmSize * 75) / 100;
             for (int i = 1; i <= N; ++i) {
                 // Traverse f1kmto2km to find the minimum distance and delete it out of avltree
                 IDandDistance minimum = f1kmto2km.getRootData();
                 f1kmto2km.traverseLNR([&minimum](IDandDistance &dat) {
                     if (dat.distance < minimum.distance) { minimum = dat; }
                 });
+                u1km.insert(minimum);
                 f1kmto2km.remove(minimum);
             }
-            // After removal, f1kmto2km remains only 75% of M vehicles, sorted in ID by avltree
+            // After removal, f1kmto2km remains only 75% of f1kmto2km vehicles, sorted in ID by
+            // avltree
             f1kmto2km.traverseLNR(
                 [&NStuck](IDandDistance &dat) { NStuck += string(dat.id) + " "; });
-            // Traverse tag, find and get the ID which is not in f1kmto2km
-            (pGD->tag)->traverseLNR([&Stuck, &f1kmto2km](RecordData &r) {
-                if (r.enable) {
-                    IDandDistance *dat = new IDandDistance(r.id);
-                    if (!f1kmto2km.find(*dat, dat)) { Stuck += string(r.id) + " "; }
-                }
-            });
-            NStuck.pop_back();
+            // The rest vehicles in u1km will be stuck
+            u1km.traverseLNR([&Stuck](IDandDistance &i) { Stuck += string(i.id) + " "; });
+            if (NStuck != "") NStuck.pop_back();
             ans = Stuck + "- " + NStuck;
         }
         return true;

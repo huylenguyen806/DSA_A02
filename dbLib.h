@@ -86,7 +86,6 @@ class RecordData {
         maxLatitude  = a.latitude;
         minLatitude  = a.latitude;
     }
-
    public:
     AVLTree<VM_Record>* avltree;
     char                id[ID_MAX_LENGTH];
@@ -128,6 +127,15 @@ class RecordData {
     bool operator>=(RecordData& n) { return strcmp(this->id, n.id) >= 0; }
     bool operator==(RecordData& n) { return strcmp(this->id, n.id) == 0; }
     bool operator!=(RecordData& n) { return strcmp(this->id, n.id) != 0; }
+    void operator=(RecordData& n) {
+        strcpy(this->id, n.id);
+        this->avltree      = n.avltree;
+        this->maxLatitude  = n.maxLatitude;
+        this->minLatitude  = n.minLatitude;
+        this->maxLongitude = n.maxLongitude;
+        this->minLongitude = n.minLongitude;
+        this->enable       = n.enable;
+    }
 };
 class Vehicle {
    public:
