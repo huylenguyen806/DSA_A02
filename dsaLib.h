@@ -372,6 +372,12 @@ class AVLTree {
     void traverseWithCondition(std::function<void(T &)> op, T &min, T &max) {
         traverseWithCondition(_pRoot, op, min, max);
     }
+    void traverseWithConditionRNL(std::function<void(T &)> op, T &min, T &max) {
+        traverseWithConditionRNL(_pRoot, op, min, max);
+    }
+    void traverseWithConditionNLR(std::function<void(T &)> op, T &min, T &max) {
+        traverseWithConditionNLR(_pRoot, op, min, max);
+    }
     bool insert(T &key) { return insert(_pRoot, key); }
     bool remove(T &key) { return remove(_pRoot, key); }
     void           traverseNLR(void (*op)(T &)) { traverseNLR(_pRoot, op); }
@@ -433,6 +439,32 @@ class AVLTree {
             traverseWithCondition(pR->_pRight, op, min, max);
         else
             traverseWithCondition(pR->_pLeft, op, min, max);
+    }
+    void traverseWithConditionRNL(AVLNode<T> *&pR, std::function<void(T &)> op, T &min, T &max) {
+        if (pR == NULL)
+            return;
+        else if (pR->_data >= min && pR->_data <= max) {
+            traverseWithConditionRNL(pR->_pRight, op, min, max);
+            op(pR->_data);
+            traverseWithConditionRNL(pR->_pLeft, op, min, max);
+        }
+        else if (pR->_data < min)
+            traverseWithConditionRNL(pR->_pRight, op, min, max);
+        else
+            traverseWithConditionRNL(pR->_pLeft, op, min, max);
+    }
+    void traverseWithConditionNLR(AVLNode<T> *&pR, std::function<void(T &)> op, T &min, T &max) {
+        if (pR == NULL)
+            return;
+        else if (pR->_data >= min && pR->_data <= max) {
+            op(pR->_data);
+            traverseWithConditionNLR(pR->_pLeft, op, min, max);
+            traverseWithConditionNLR(pR->_pRight, op, min, max);
+        }
+        else if (pR->_data < min)
+            traverseWithConditionNLR(pR->_pRight, op, min, max);
+        else
+            traverseWithConditionNLR(pR->_pLeft, op, min, max);
     }
     void _printNLR(AVLNode<T> *&_pR) {
         if (_pR == NULL) return;

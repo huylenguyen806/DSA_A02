@@ -16,7 +16,7 @@
 #include "dbLib.h"
 #include "requestLib.h"
 using namespace std;
-#define GPS_DISTANCE_ERROR 0.005
+#define GPS_DISTANCE_ERROR 0.000
 bool initVMGlobalData(void **pGData) {
     // TODO: allocate and initialize global data
     // return false if failed
@@ -102,7 +102,7 @@ bool request1(string code, Vehicle *&pGD, string &ans) {
         else {
             // if found 2 records, then get the distance and positions
             stringstream stream;
-            stream << GetDistance(*record1, *record2);
+            stream << fixed << setprecision(12) << GetDistance(*record1, *record2);
             string distance;
             stream >> distance;
             ans = HuongTheoKinhDo(*record1, *record2) + " " + HuongTheoViDo(*record1, *record2) +
@@ -125,7 +125,7 @@ bool request2(string code, Vehicle *&pGD, string &ans) {
         double _longitude;
         stringstream(_along) >> _longitude;
         (pGD->tag)->traverseLNR([_longitude, _direc, &count](RecordData &r) {
-            if (((r.maxLongitude - _longitude < 0.0 && _direc == "W") ||
+            if (((r.maxLongitude - _longitude <= 0.0 && _direc == "W") ||
                  (r.minLongitude - _longitude >= 0.0 && _direc == "E")) &&
                 r.enable) {
                 count++;
@@ -150,7 +150,7 @@ bool request3(string code, Vehicle *&pGD, string &ans) {
         double _latitude;
         stringstream(_alat) >> _latitude;
         (pGD->tag)->traverseLNR([_latitude, _direc, &count](RecordData &r) {
-            if (((r.maxLatitude - _latitude < 0.0 && _direc == "S") ||
+            if (((r.maxLatitude - _latitude <= 0.0 && _direc == "S") ||
                  (r.minLatitude - _latitude >= 0.0 && _direc == "N")) &&
                 r.enable) {
                 count++;
@@ -289,19 +289,19 @@ bool request6(string code, Vehicle *&pGD, string &ans) {
                     [_longitude, _latitude, &u2km, &u500, &u300](VM_Record &a) {
                         double dis =
                             fabs(distanceEarth(_latitude, _longitude, a.latitude, a.longitude));
-                        if (dis - 0.3 <= GPS_DISTANCE_ERROR) {  // <= 300m
+                        if (dis - 0.3 == GPS_DISTANCE_ERROR) {  // <= 300m
                             u300 = true;
-                            u500 = true;
-                            u2km = true;
+                            // u500 = true;
+                            // u2km = true;
                         }
                         else if (dis - 0.5 < GPS_DISTANCE_ERROR) {  // >300m and <500m
-                            u300 = false;
+                            // u300 = false;
                             u500 = true;
-                            u2km = true;
+                            // u2km = true;
                         }
                         else if (dis - 2.0 <= GPS_DISTANCE_ERROR) {  // >= 500m and <= 2km
-                            u300 = false;
-                            u500 = false;
+                            // u300 = false;
+                            // u500 = false;
                             u2km = true;
                         }
                     },
@@ -331,7 +331,7 @@ bool request6(string code, Vehicle *&pGD, string &ans) {
             ans = In + "- ";
         }
         else {
-            if (u300mSize <= 0.75 * M) {
+            if ((double) u300mSize <= (double) (0.75 * M)) {
                 // Only vehicle having the distance under 500m can go into the
                 // observatory
                 Under500m.traverseLNR([&In](IDandDistance &i) { In += string(i.id) + " "; });
@@ -380,29 +380,30 @@ bool request7(string code, Vehicle *&pGD, string &ans) {
         (pGD->tag)->traverseLNR([&under500mSize, &f1kmto2kmSize, &f1kmto2km, &u1km, &u2km,
                                  _longitude, _latitude, &min, &max](RecordData &r) {
             if (r.enable) {
-                bool u500 = false, u1000 = false, f1to2 = false;
+                bool           u500 = false, u1000 = false, f1to2 = false;
+                IDandDistance *_elem = new IDandDistance(r.id);
                 (r.avltree)->traverseWithCondition(
-                    [&u500, &u1000, &f1to2, _longitude, _latitude](VM_Record &a) {
+                    [&u500, &u1000, &f1to2, _longitude, _latitude, &_elem](VM_Record &a) {
                         double dis =
                             fabs(distanceEarth(_latitude, _longitude, a.latitude, a.longitude));
                         if (dis - 0.5 <= GPS_DISTANCE_ERROR) {  // <= 500m
-                            u500  = true;
-                            u1000 = true;
-                            f1to2 = false;
+                            u500 = true;
+                            // u1000 = true;
+                            // f1to2 = false;
                         }
                         else if (dis - 1.0 < GPS_DISTANCE_ERROR) {  // > 500m and < 1km
-                            u500  = false;
+                            // u500  = false;
                             u1000 = true;
-                            f1to2 = false;
+                            // f1to2 = false;
                         }
                         else if (dis - 2.0 <= GPS_DISTANCE_ERROR) {  // >= 1km and <= 2km
-                            u500  = false;
-                            u1000 = false;
-                            f1to2 = true;
+                            // u500  = false;
+                            // u1000 = false;
+                            f1to2                                      = true;
+                            if (_elem->distance < dis) _elem->distance = dis;
                         }
                     },
                     min, max);
-                IDandDistance *_elem = new IDandDistance(r.id);
                 if (u500) {
                     under500mSize++;
                     u1km.insert(*_elem);
@@ -563,23 +564,23 @@ bool processRequest(VM_Request &request, L1List<VM_Record> &recordList, void *pG
     string code(request.code);
     string ans;
     if (request1(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else if (request2(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else if (request3(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else if (request4(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else if (request5(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else if (request6(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else if (request7(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else if (request8(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else if (request9(code, pGD, ans))
-        cout << code << ": " << ans << endl;
+        cout << code[0] << ": " << ans << endl;
     else {
         return false;
     }

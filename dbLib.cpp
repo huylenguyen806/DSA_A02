@@ -84,7 +84,7 @@ void process(L1List<VM_Request> &requestList, L1List<VM_Record> &rList) {
     releaseVMGlobalData(pGData);
 }
 void printVMRecord(VM_Record &b) {
-    printf("%s: (%0.5f, %0.5f), %s\n", b.id, b.longitude, b.latitude, ctime(&b.timestamp));
+    printf("%s: (%0.5f, %0.5f), %s\n", b.id, b.longitude, b.latitude, asctime(gmtime(&b.timestamp)));
 }
 /// This function converts decimal degrees to radians
 inline double deg2rad(double deg) { return (deg * __PI / 180); }

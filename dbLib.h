@@ -86,6 +86,7 @@ class RecordData {
         maxLatitude  = a.latitude;
         minLatitude  = a.latitude;
     }
+
    public:
     AVLTree<VM_Record>* avltree;
     char                id[ID_MAX_LENGTH];
@@ -161,7 +162,10 @@ struct IDandDistance {
     char   id[ID_MAX_LENGTH];
     double distance;
     IDandDistance() { strcpy(id, ""); }
-    IDandDistance(char* _id) { strcpy(id, _id); }
+    IDandDistance(char* _id) {
+        strcpy(id, _id);
+        distance = 0;
+    }
     IDandDistance(char* _id, double dis) {
         strcpy(id, _id);
         distance = dis;
